@@ -8,6 +8,8 @@ import copy
 hard_black = (0,0,0)
 dark_grey = (58,58,58)
 light_grey = (120, 120, 120)
+off_white = (237,237,237)
+
 placed_color_adder = 20
 
 square_pixel_length = 25
@@ -19,6 +21,7 @@ grid_size = ((grid_lines_width + x_squares * (square_pixel_length + grid_lines_w
 
 background_color = hard_black
 empty_square_color = dark_grey
+cleared_line_color = off_white
 
 left_of_playing_field = 0 # pixel
 top_of_playing_field = 0  #pixel
@@ -26,7 +29,7 @@ top_of_playing_field = 0  #pixel
 max_refresh_time = 1   #in seconds
 min_refresh_time = .05 #in seconds
 lines_to_get_max_refresh = 500 #refresh time will linearly decrease until it reaches the min number at x number of lines
-
+line_clear_delay = .2
 #############################
 
 #Build game environment
@@ -56,13 +59,52 @@ def get_line_refresh_time(lines):
     print (proportion_of_max)
     return max(min_refresh_time, (max_refresh_time - proportion_of_max*(max_refresh_time-min_refresh_time)))
 
-def check_line_cleared(grid):
+def check_line_cleared(grid, lines):
 
-    return False
+    #loop through lines
+    cleared_lines = []
+    for i in range(y_squares):
 
-def clear_lines(grid):
+        cleared = True
+        for x in range(x_squares):
+
+            if not grid[x][i][0]: #if there is not a block there
+                cleared = False
+                break
+
+        if cleared:
+            cleared_lines.append(i)
+
+    lines += len(cleared_lines)
+    if cleared_lines != []:
+        grid = clear_lines(grid, cleared_lines)
+    return grid, lines
+
+def clear_lines(grid, cleared_lines):
+
+    #flash the cleared_line_color once or twice and then disappear
+    for j in cleared_lines:
+        for i in range(x_squares):
+
+            turn_square_color(grid, i, j, cleared_line_color)
+
+    update_grid(grid)
+    time.sleep(line_clear_delay)
+
+    #Erase the old lines
+
+    how_many_to_shift_down = [0,] * 20
+
+    for i in cleared_lines: #this is sorted numerically
+        #16, 18, 19
+        for x in range(i):
+            how_many_to_shift_down[x] = how_many_to_shift_down[x] + 1
 
     return grid
+#####################################333
+
+
+
 
 def place_object(grid, object_xys):
 
@@ -250,9 +292,8 @@ while True:
         #    grid, object_xys = move_object(grid, 'up', object_xys)
         print (object_xys)
 
-    line_cleared = check_line_cleared(grid)
-    if line_cleared:
-        grid = clear_lines(grid)
+    line_cleared, lines = check_line_cleared(grid, lines)
+
     time.sleep(.1)
     update_grid(grid)
     pygame.display.flip()
