@@ -8,6 +8,7 @@ import copy
 hard_black = (0,0,0)
 dark_grey = (58,58,58)
 light_grey = (120, 120, 120)
+placed_color_adder = 20
 
 square_pixel_length = 25
 x_squares = 10 #10 sqaures along the x direction
@@ -34,7 +35,7 @@ lines_to_get_max_refresh = 500 #refresh time will linearly decrease until it rea
 def rectangle(place, color ,x, y, l, w):
     pygame.draw.rect(place, color, [x, y, l ,w])
 
-def update_grid(squares):
+def update_grid(grid):
 
     for i in range(x_squares):
         for j in range(y_squares):
@@ -63,21 +64,15 @@ def clear_lines(grid):
 
     return grid
 
-def check_lowest_point(grid, object_xys):
-
-    a = False
-    for i in object_xys:
-        if 19 in i:
-            a = True
-
-    return a
-
 def place_object(grid, object_xys):
 
     for coords in object_xys:
 
         grid[coords[0]][coords[1]][0] = True
         grid[coords[0]][coords[1]][1] = False
+        grid[coords[0]][coords[1]][2] = grid[coords[0]][coords[1]][2] + placed_color_adder
+        grid[coords[0]][coords[1]][3] = grid[coords[0]][coords[1]][2] + placed_color_adder
+        grid[coords[0]][coords[1]][4] = grid[coords[0]][coords[1]][2] + placed_color_adder
 
     return grid
 
@@ -88,7 +83,6 @@ def move_object(grid, how, object_xys):
     print (object_xys)
     new_xys = copy.deepcopy(object_xys)
 
-
     if how == 'down':
         for i in range(len(new_xys)):
             new_xys[i][1] = new_xys[i][1] + 1
@@ -97,7 +91,6 @@ def move_object(grid, how, object_xys):
 
         for i in range(len(new_xys)):
             new_xys[i][1] = new_xys[i][1] - 1
-
 
     elif how == 'left':
 
@@ -109,11 +102,15 @@ def move_object(grid, how, object_xys):
         for i in range(len(new_xys)):
             new_xys[i][0] = new_xys[i][0] + 1
 
-    print ('new xys')
-    print (new_xys)
-    print ('ob xys')
-    print (object_xys)
-    grid = change_squares_to_new_coords(grid, object_xys, new_xys)
+    if not check_collision(grid, new_xys): #no collosion
+        grid = change_squares_to_new_coords(grid, object_xys, new_xys)
+    else:
+        if how == 'down':
+            #place
+            grid = place_object(grid, object_xys)
+            return grid, None
+        else:
+            return grid, object_xys
     return grid, new_xys
 
 def print_values_at_coords(grid, coords):
@@ -121,10 +118,22 @@ def print_values_at_coords(grid, coords):
     for i in coords:
         print (grid[i[0]][i[1]])
 
-def check_collision():
+def check_collision(grid, new_xys):
 
-    #use this new one
-    pass
+    # (Placed, Object, r,g,b)
+    for i in new_xys:
+        if i[0] < 0:
+            return True
+        if i[0] > (x_squares - 1):
+            return True
+        if i[1] < 0:
+            return True
+        if i[1] > (y_squares - 1):
+            return True
+        if grid[i[0]][i[1]][0]: #There is already a piece there
+            return True
+
+    return False
 
 def change_squares_to_new_coords(grid, old_coords, new_coords):
 
@@ -144,30 +153,37 @@ def change_squares_to_new_coords(grid, old_coords, new_coords):
         coords = new_coords[i]
         grid[coords[0]][coords[1]] = [placed[i], active[i], colors[i][0], colors[i][1], colors[i][2]]
 
-
     return grid
-
-def drop_object(grid, object_xys):
-
-    ###Make sure the line is able to be dropped first
-    if not check_lowest_point(grid, object_xys):
-
-        grid, object_xys = move_object(grid, 'down', object_xys)
-
-        placed = False
-
-    else:
-        placed = True
-        grid = place_object(grid, object_xys)
-
-    return grid, placed, object_xys
-        ## PLACE the object
 
 def rotate_object():
 
     pass
 
+def object_generator(grid):
 
+    object_xys = [[3,0], [3,1], [4,0], [4,1]]
+
+    #check for collision among the new object_xys
+    if not check_collision(grid, object_xys):
+
+        grid[3][0] = (False, True, 0,0,0)
+        grid = turn_square_color(grid, 3,0, light_grey)
+        grid[3][1] = (False, True, 0,0,0)
+        grid = turn_square_color(grid, 3,1, light_grey)
+        grid[4][0] = (False, True, 0,0,0)
+        grid = turn_square_color(grid, 4,0, light_grey)
+        grid[4][1] = (False, True, 0,0,0)
+        grid = turn_square_color(grid, 4,1, light_grey)
+
+        return grid, object_xys
+
+    else:
+        #game over
+        return grid, None
+
+def game_over_animation():
+
+    print ('game over')
 
 ############################33
 #prepare
@@ -194,21 +210,8 @@ refresh_time = get_line_refresh_time(lines)
 i = 0
 drop = False
 start_time = time.time()
-
-grid[0][0] = (False, True, 0,0,0)
-grid = turn_square_color(grid, 0,0, light_grey)
-grid[0][1] = (False, True, 0,0,0)
-grid = turn_square_color(grid, 0,1, light_grey)
-grid[1][0] = (False, True, 0,0,0)
-grid = turn_square_color(grid, 1,0, light_grey)
-grid[1][1] = (False, True, 0,0,0)
-grid = turn_square_color(grid, 1,1, light_grey)
-
-object_xys = [[0,0], [0,1], [1,0], [1,1]]
-
-for i in object_xys:
-    print (grid[i[0]][i[1]])
-
+pressed = False
+object_xys = None
 
 while True:
 
@@ -225,6 +228,13 @@ while True:
         grid, placed, object_xys = drop_object(grid, object_xys)
         print ('drop object')
     '''
+    if object_xys == None: #Object was placed
+        grid, object_xys = object_generator(grid)
+        print (object_xys)
+        if object_xys == None:
+            #Game is over
+            game_over_animation()
+            break
 
     if pygame.key.get_focused():
         keys = pygame.key.get_pressed()
@@ -233,17 +243,16 @@ while True:
         elif keys[pygame.K_LEFT]:
             grid, object_xys = move_object(grid, 'left', object_xys)
         elif keys[pygame.K_RIGHT]:
-            print ('moving right')
             grid, object_xys = move_object(grid, 'right', object_xys)
         elif keys[pygame.K_DOWN]:
             grid, object_xys = move_object(grid, 'down', object_xys)
         #elif keys[pygame.K_SPACE]:
         #    grid, object_xys = move_object(grid, 'up', object_xys)
-
+        print (object_xys)
 
     line_cleared = check_line_cleared(grid)
     if line_cleared:
         grid = clear_lines(grid)
-
+    time.sleep(.1)
     update_grid(grid)
     pygame.display.flip()
