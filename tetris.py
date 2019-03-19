@@ -1,5 +1,6 @@
 ### Tetris
 import pygame
+
 import numpy as np
 import time
 import copy
@@ -30,6 +31,9 @@ max_refresh_time = 1   #in seconds
 min_refresh_time = .05 #in seconds
 lines_to_get_max_refresh = 500 #refresh time will linearly decrease until it reaches the min number at x number of lines
 line_clear_delay = .2
+
+sticky_keys_hold_time = .1
+
 #############################
 
 #Build game environment
@@ -56,7 +60,6 @@ def turn_square_color(grid, i, j, color):
 def get_line_refresh_time(lines):
 
     proportion_of_max = lines / lines_to_get_max_refresh
-    print (proportion_of_max)
     return max(min_refresh_time, (max_refresh_time - proportion_of_max*(max_refresh_time-min_refresh_time)))
 
 def check_line_cleared(grid, lines):
@@ -122,7 +125,6 @@ def move_object(grid, how, object_xys):
 
     #check collision
 
-    print (object_xys)
     new_xys = copy.deepcopy(object_xys)
 
     if how == 'down':
@@ -234,7 +236,6 @@ pygame.init()
 screen = pygame.display.set_mode(grid_size)
 pygame.display.set_caption('Tetris')
 screen.fill(background_color)
-
 grid = np.zeros((x_squares, y_squares, 5)) #3D numpy array
 empty_square = (False, False, empty_square_color[0], empty_square_color[1], empty_square_color[2])
 
@@ -248,12 +249,14 @@ for i in range(x_squares):
 
 #Main Game Loop
 lines = 0
-refresh_time = get_line_refresh_time(lines)
 i = 0
 drop = False
 start_time = time.time()
 pressed = False
 object_xys = None
+refresh_time = get_line_refresh_time(lines)
+last_dir = None
+last_pressed = time.time()
 
 while True:
 
@@ -262,38 +265,67 @@ while True:
             pygame.quit()
             exit()
             break  # Flag that we are done so we exit this loop
-    #show the snake
-    '''
-    if (time.time() - start_time) > refresh_time:
-        current_time = time.time()
-        start_time = time.time()
-        grid, placed, object_xys = drop_object(grid, object_xys)
-        print ('drop object')
-    '''
+
     if object_xys == None: #Object was placed
         grid, object_xys = object_generator(grid)
-        print (object_xys)
         if object_xys == None:
             #Game is over
             game_over_animation()
             break
 
+    if (time.time() - start_time) > refresh_time:
+        start_time = time.time()
+        grid, object_xys = move_object(grid, 'down', object_xys)
+        refresh_time = get_line_refresh_time(lines)
+
     if pygame.key.get_focused():
         keys = pygame.key.get_pressed()
+
         if keys[pygame.K_UP]:
-            grid, object_xys = move_object(grid, 'up', object_xys)
+            if last_dir == 'up':
+                if (time.time() - last_pressed) > sticky_keys_hold_time:
+                    grid, object_xys = move_object(grid, 'up', object_xys)
+                    last_pressed = time.time()
+            else:
+                last_dir = 'up'
+                last_pressed = time.time()
+                grid, object_xys = move_object(grid, 'up', object_xys)
+
         elif keys[pygame.K_LEFT]:
-            grid, object_xys = move_object(grid, 'left', object_xys)
+            if last_dir == 'left':
+                if (time.time() - last_pressed) > sticky_keys_hold_time:
+                    grid, object_xys = move_object(grid, 'left', object_xys)
+                    last_pressed = time.time()
+            else:
+                last_dir = 'left'
+                last_pressed = time.time()
+                grid, object_xys = move_object(grid, 'left', object_xys)
+
+
         elif keys[pygame.K_RIGHT]:
-            grid, object_xys = move_object(grid, 'right', object_xys)
+            if last_dir == 'right':
+                if (time.time() - last_pressed) > sticky_keys_hold_time:
+                    grid, object_xys = move_object(grid, 'right', object_xys)
+                    last_pressed = time.time()
+            else:
+                last_dir = 'right'
+                last_pressed = time.time()
+                grid, object_xys = move_object(grid, 'right', object_xys)
+
         elif keys[pygame.K_DOWN]:
-            grid, object_xys = move_object(grid, 'down', object_xys)
+            if last_dir == 'down':
+                if (time.time() - last_pressed) > sticky_keys_hold_time:
+                    grid, object_xys = move_object(grid, 'down', object_xys)
+                    last_pressed = time.time()
+            else:
+                last_dir = 'down'
+                last_pressed = time.time()
+                grid, object_xys = move_object(grid, 'down', object_xys)
+
         #elif keys[pygame.K_SPACE]:
         #    grid, object_xys = move_object(grid, 'up', object_xys)
-        print (object_xys)
 
     line_cleared, lines = check_line_cleared(grid, lines)
 
-    time.sleep(.1)
     update_grid(grid)
     pygame.display.flip()
