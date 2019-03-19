@@ -81,7 +81,25 @@ def check_line_cleared(grid, lines):
     lines += len(cleared_lines)
     if cleared_lines != []:
         grid = clear_lines(grid, cleared_lines)
+        print (lines)
+
     return grid, lines
+
+def write_row_to_grid(grid, row, row_ind):
+
+    for i in range(len(row)):
+        grid[i][row_ind] = row[i]
+
+    return grid
+
+def get_row_from_grid(grid, row_ind):
+
+    row = []
+    for i in range(len(grid)):
+
+        row.append(grid[i][row_ind])
+
+    return row
 
 def clear_lines(grid, cleared_lines):
 
@@ -92,22 +110,43 @@ def clear_lines(grid, cleared_lines):
             turn_square_color(grid, i, j, cleared_line_color)
 
     update_grid(grid)
-    time.sleep(line_clear_delay)
+    pygame.display.flip()
+    time.sleep(line_clear_delay / 4)
 
-    #Erase the old lines
+    for j in cleared_lines:
+        for i in range(x_squares):
 
-    how_many_to_shift_down = [0,] * 20
+            turn_square_color(grid, i, j, empty_square_color)
 
-    for i in cleared_lines: #this is sorted numerically
-        #16, 18, 19
-        for x in range(i):
-            how_many_to_shift_down[x] = how_many_to_shift_down[x] + 1
+    update_grid(grid)
+    pygame.display.flip()
+    time.sleep(line_clear_delay / 4)
+    ##########################################################33
 
-    return grid
-#####################################333
+    how_many_to_shift_down = [0,] * y_squares
+    #16,17,19
+    for row in range(y_squares):
+        for line in cleared_lines:
+            if row < line:
+                how_many_to_shift_down[row] = how_many_to_shift_down[row] + 1
+
+    shifted_grid = copy.deepcopy(grid)
+    blank_row = [empty_square,] * x_squares
+
+    for i in range(len(cleared_lines)): #Add x number of blank rows to the top
+        shifted_grid = write_row_to_grid(shifted_grid, blank_row, i)
+
+    for i in range(y_squares):
+
+        if i not in cleared_lines:
+            row_to_use = get_row_from_grid(grid, i)
+            shifted_grid = write_row_to_grid(shifted_grid, row_to_use, (i + how_many_to_shift_down[i]) )
 
 
-
+    time.sleep(line_clear_delay / 2)
+    update_grid(shifted_grid)
+    pygame.display.flip()
+    return shifted_grid
 
 def place_object(grid, object_xys):
 
@@ -122,7 +161,6 @@ def place_object(grid, object_xys):
     return grid
 
 def move_object(grid, how, object_xys):
-
     #check collision
 
     new_xys = copy.deepcopy(object_xys)
@@ -267,6 +305,7 @@ while True:
             break  # Flag that we are done so we exit this loop
 
     if object_xys == None: #Object was placed
+        grid, lines = check_line_cleared(grid, lines)
         grid, object_xys = object_generator(grid)
         if object_xys == None:
             #Game is over
@@ -325,7 +364,6 @@ while True:
         #elif keys[pygame.K_SPACE]:
         #    grid, object_xys = move_object(grid, 'up', object_xys)
 
-    line_cleared, lines = check_line_cleared(grid, lines)
 
     update_grid(grid)
     pygame.display.flip()
