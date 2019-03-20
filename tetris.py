@@ -4,14 +4,22 @@ import pygame
 import numpy as np
 import time
 import copy
+import random
 ####### Set game intro variables
 
 hard_black = (0,0,0)
 dark_grey = (58,58,58)
 light_grey = (120, 120, 120)
 off_white = (237,237,237)
+lime_green = (53, 242, 106)
+blue = (53, 84, 242)
+red = (242, 53, 53)
+yellow = (242, 239, 53)
+purple = (201, 53, 242)
+orange = (242, 138, 53)
 
-placed_color_adder = 20
+
+placed_color_adder = -20
 
 square_pixel_length = 25
 x_squares = 10 #10 sqaures along the x direction
@@ -152,11 +160,13 @@ def place_object(grid, object_xys):
 
     for coords in object_xys:
 
+
         grid[coords[0]][coords[1]][0] = True
         grid[coords[0]][coords[1]][1] = False
         grid[coords[0]][coords[1]][2] = grid[coords[0]][coords[1]][2] + placed_color_adder
-        grid[coords[0]][coords[1]][3] = grid[coords[0]][coords[1]][2] + placed_color_adder
-        grid[coords[0]][coords[1]][4] = grid[coords[0]][coords[1]][2] + placed_color_adder
+        grid[coords[0]][coords[1]][3] = grid[coords[0]][coords[1]][3] + placed_color_adder
+        grid[coords[0]][coords[1]][4] = grid[coords[0]][coords[1]][4] + placed_color_adder
+
 
     return grid
 
@@ -186,6 +196,7 @@ def move_object(grid, how, object_xys):
 
     if not check_collision(grid, new_xys): #no collosion
         grid = change_squares_to_new_coords(grid, object_xys, new_xys)
+
     else:
         if how == 'down':
             #place
@@ -243,19 +254,24 @@ def rotate_object():
 
 def object_generator(grid):
 
-    object_xys = [[3,0], [3,1], [4,0], [4,1]]
+    choice = random.randint(0, 7)
+    choice = 0
+    if choice == 0:
+        #   ________
+        #  |   |   |
+        #  |___|___|
+        #  |   |   |
+        #  |___|___|
+        object_xys = [[4,0], [4,1], [5,0], [5,1]]
+        object_color = lime_green
 
     #check for collision among the new object_xys
     if not check_collision(grid, object_xys):
 
-        grid[3][0] = (False, True, 0,0,0)
-        grid = turn_square_color(grid, 3,0, light_grey)
-        grid[3][1] = (False, True, 0,0,0)
-        grid = turn_square_color(grid, 3,1, light_grey)
-        grid[4][0] = (False, True, 0,0,0)
-        grid = turn_square_color(grid, 4,0, light_grey)
-        grid[4][1] = (False, True, 0,0,0)
-        grid = turn_square_color(grid, 4,1, light_grey)
+        for i in object_xys:
+
+            grid[i[0]][i[1]] = [False, True, 0,0,0]
+            grid = turn_square_color(grid, i[0], i[1], object_color)
 
         return grid, object_xys
 
@@ -316,6 +332,14 @@ while True:
         start_time = time.time()
         grid, object_xys = move_object(grid, 'down', object_xys)
         refresh_time = get_line_refresh_time(lines)
+
+    if object_xys == None: #Object was placed
+        grid, lines = check_line_cleared(grid, lines)
+        grid, object_xys = object_generator(grid)
+        if object_xys == None:
+            #Game is over
+            game_over_animation()
+            break
 
     if pygame.key.get_focused():
         keys = pygame.key.get_pressed()
