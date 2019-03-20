@@ -17,7 +17,7 @@ red = (242, 53, 53)
 yellow = (242, 239, 53)
 purple = (201, 53, 242)
 orange = (242, 138, 53)
-
+light_blue = (46, 219, 213)
 
 placed_color_adder = -20
 
@@ -59,7 +59,6 @@ def update_grid(grid):
             square_color = (sq[2], sq[3], sq[4])
 
             rectangle(screen, square_color, (left_of_playing_field + i*square_pixel_length + (i+1)*grid_lines_width), (top_of_playing_field + j*square_pixel_length + (j+1)*grid_lines_width), square_pixel_length, square_pixel_length)
-
 
 def turn_square_color(grid, i, j, color):
     grid[i][j] = (grid[i][j][0], grid[i][j][1], color[0], color[1], color[2])
@@ -248,14 +247,74 @@ def change_squares_to_new_coords(grid, old_coords, new_coords):
 
     return grid
 
-def rotate_object():
+def get_vectors_wrt_rotate_point(object_xys, rotate_point_index):
 
-    pass
+    #Get vectors from rotate point to each point in the object
+
+    vectors = copy.deepcopy(object_xys)
+    for i in range(len(object_xys)):
+
+        vectors[i][0] = object_xys[i][0] - object_xys[rotate_point_index][0]
+        vectors[i][1] = object_xys[i][1] - object_xys[rotate_point_index][1]
+        vectors[i] = vectors[i] + [0] #MAke it 3 dimensions
+
+    return vectors
+
+def rotate_object(grid, object_xys, object_type, how = 'clock'):
+
+    if object_type == 0: #Dont change for the square
+        return grid, object_xys
+    elif object_type == 1:
+        rotate_point_index = 1
+
+    elif object_type == 2:
+        rotate_point_index = 0
+
+    elif object_type == 3:
+        rotate_point_index = 2
+
+    elif object_type == 4:
+        rotate_point_index = 1
+
+    elif object_type == 5:
+        rotate_point_index = 1
+
+    elif object_type == 6:
+        rotate_point_index = 1
+
+    ###Use Cross Product for rotation
+    vectors = get_vectors_wrt_rotate_point(object_xys, rotate_point_index)
+    print (vectors)
+
+    if how == 'clock':
+        vec = [0,0,-1]
+    else: #counterclockwise
+        vec = [0,0,1]
+
+    new_shift_coords = []
+    for i in vectors:
+        new = np.cross(vec, i)
+        new_shift_coords.append(new)
+
+    print (object_xys)
+    print (new_shift_coords)
+
+    new_object_xys = []
+    for i in range(len(new_shift_coords)):
+        new_object_xys.append([object_xys[rotate_point_index][0] + new_shift_coords[i][0], object_xys[rotate_point_index][1] + new_shift_coords[i][1] ])
+
+    print (new_object_xys)
+
+    if not check_collision(grid, new_object_xys):
+        grid = change_squares_to_new_coords(grid, object_xys, new_object_xys)
+        return (grid, new_object_xys)
+    else:
+        return (grid, object_xys)
+
 
 def object_generator(grid):
 
-    choice = random.randint(0, 7)
-    choice = 0
+    choice = random.randint(0, 6)
     if choice == 0:
         #   ________
         #  |   |   |
@@ -265,6 +324,87 @@ def object_generator(grid):
         object_xys = [[4,0], [4,1], [5,0], [5,1]]
         object_color = lime_green
 
+    elif choice == 1:
+        #  ____
+        # |   |
+        # |___|
+        # |   |
+        # |___|
+        # |   |
+        # |___|
+        # |   |
+        # |___|
+        #
+        object_xys = [[3,0], [4,0], [5,0], [6,0]]
+        object_color = blue
+
+    elif choice == 2:
+
+        #  ____
+        # |   |
+        # |___|
+        # |   |
+        # |___|____
+        # |   |   |
+        # |___|___|
+        #
+        object_xys = [[3,0], [4,0], [5,0], [3,1]]
+        object_color = red
+
+    elif choice == 3:
+
+        #  _______
+        # |   |   |
+        # |___|___|
+        # |   |
+        # |___|
+        # |   |
+        # |___|
+
+        object_xys = [[3,0], [4,0], [5,0], [5,1]]
+        object_color = orange
+
+    elif choice == 4:
+
+        #  ____
+        # |   |
+        # |___|____
+        # |   |   |
+        # |___|___|
+        # |   |
+        # |___|
+
+        object_xys = [[3,0], [4,0], [5,0], [4,1]]
+        object_color = light_blue
+
+    elif choice == 5:
+
+        #  ____
+        # |   |
+        # |___|____
+        # |   |   |
+        # |___|___|
+        #     |   |
+        #     |___|
+
+        object_xys = [[3,1], [4,0], [4,1], [5,0]]
+        object_color = yellow
+
+    elif choice == 6:
+
+        #      ____
+        #     |   |
+        #  ___|___|
+        # |   |   |
+        # |___|___|
+        # |   |
+        # |___|
+
+        object_xys = [[3,0], [4,0], [4,1], [5,1]]
+        object_color = purple
+
+
+
     #check for collision among the new object_xys
     if not check_collision(grid, object_xys):
 
@@ -273,11 +413,11 @@ def object_generator(grid):
             grid[i[0]][i[1]] = [False, True, 0,0,0]
             grid = turn_square_color(grid, i[0], i[1], object_color)
 
-        return grid, object_xys
+        return grid, object_xys, choice
 
     else:
         #game over
-        return grid, None
+        return grid, None, choice
 
 def game_over_animation():
 
@@ -322,7 +462,7 @@ while True:
 
     if object_xys == None: #Object was placed
         grid, lines = check_line_cleared(grid, lines)
-        grid, object_xys = object_generator(grid)
+        grid, object_xys, object_type = object_generator(grid)
         if object_xys == None:
             #Game is over
             game_over_animation()
@@ -335,7 +475,7 @@ while True:
 
     if object_xys == None: #Object was placed
         grid, lines = check_line_cleared(grid, lines)
-        grid, object_xys = object_generator(grid)
+        grid, object_xys, object_type = object_generator(grid)
         if object_xys == None:
             #Game is over
             game_over_animation()
@@ -347,12 +487,22 @@ while True:
         if keys[pygame.K_UP]:
             if last_dir == 'up':
                 if (time.time() - last_pressed) > sticky_keys_hold_time:
-                    grid, object_xys = move_object(grid, 'up', object_xys)
+                    grid, object_xy = rotate_object(grid, object_xys, object_type)
                     last_pressed = time.time()
             else:
                 last_dir = 'up'
                 last_pressed = time.time()
-                grid, object_xys = move_object(grid, 'up', object_xys)
+                grid, object_xys = rotate_object(grid, object_xys, object_type)
+
+        elif keys[pygame.K_z]:
+            if last_dir == 'z':
+                if (time.time() - last_pressed) > sticky_keys_hold_time:
+                    grid, object_xys = rotate_object(grid, object_xys, object_type, how = 'counter')
+                    last_pressed = time.time()
+            else:
+                last_dir = 'z'
+                last_pressed = time.time()
+                grid, object_xys = rotate_object(grid, object_xys, object_type, how = 'counter')
 
         elif keys[pygame.K_LEFT]:
             if last_dir == 'left':
