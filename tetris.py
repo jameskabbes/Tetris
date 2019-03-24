@@ -284,8 +284,6 @@ def rotate_object(grid, object_xys, object_type, how = 'clock'):
 
     ###Use Cross Product for rotation
     vectors = get_vectors_wrt_rotate_point(object_xys, rotate_point_index)
-    print ('Vectors to point:')
-    print (vectors)
 
     if how == 'clock':
         vec = [0,0,-1]
@@ -297,24 +295,13 @@ def rotate_object(grid, object_xys, object_type, how = 'clock'):
         new = np.cross(vec, i)
         new_shift_coords.append(new)
 
-    print (object_xys)
-    print (new_shift_coords)
-    print ('Rotate point: ' + str(rotate_point_index))
-    print (object_xys[rotate_point_index])
-
-
     new_object_xys = []
     for i in range(len(new_shift_coords)):
         new_object_xys.append([object_xys[rotate_point_index][0] + new_shift_coords[i][0], object_xys[rotate_point_index][1] + new_shift_coords[i][1] ])
 
-    print ('New XYs')
-    print (new_object_xys)
 
     if not check_collision(grid, new_object_xys):
-        print_values_at_coords(grid, new_object_xys)
         grid = change_squares_to_new_coords(grid, object_xys, new_object_xys)
-        print_values_at_coords(grid, new_object_xys)
-        print (new_object_xys)
         return (grid, new_object_xys)
     else:
         return (grid, object_xys)
@@ -496,23 +483,15 @@ while True:
 
             if last_dir == 'up':
                 if (time.time() - last_pressed) > sticky_keys_hold_time:
-                    print ('Rotate')
-
-                    grid, object_xy = rotate_object(grid, object_xys, object_type)
+                    grid, object_xys = rotate_object(grid, object_xys, object_type)
                     last_pressed = time.time()
-                    print ('inside loop')
-                    print_values_at_coords(grid, object_xys)
+
 
             else:
-                print ('Rotate')
-
                 last_dir = 'up'
                 last_pressed = time.time()
                 grid, object_xys = rotate_object(grid, object_xys, object_type)
 
-                print ('inside loop')
-                print_values_at_coords(grid, object_xys)
-                print (object_xys)
 
         elif keys[pygame.K_z]:
             if last_dir == 'z':
