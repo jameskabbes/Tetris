@@ -26,7 +26,8 @@ x_squares = 10 #10 sqaures along the x direction
 y_squares = 20 #10 sqaures along the y direction
 
 grid_lines_width = 3
-grid_size = ((grid_lines_width + x_squares * (square_pixel_length + grid_lines_width)), (grid_lines_width + y_squares * (square_pixel_length + grid_lines_width)))
+score_width = 100
+grid_size = ((grid_lines_width + x_squares * (square_pixel_length + grid_lines_width) + score_width), (grid_lines_width + y_squares * (square_pixel_length + grid_lines_width)))
 
 background_color = hard_black
 empty_square_color = dark_grey
@@ -51,6 +52,8 @@ def rectangle(place, color ,x, y, l, w):
     pygame.draw.rect(place, color, [x, y, l ,w])
 
 def update_grid(grid):
+    whole_screen.fill(background_color)
+    score_surface.blit(font.render(str(lines), False, off_white), [0,0])
 
     for i in range(x_squares):
         for j in range(y_squares):
@@ -58,7 +61,7 @@ def update_grid(grid):
             sq = grid[i][j]
             square_color = (sq[2], sq[3], sq[4])
 
-            rectangle(screen, square_color, (left_of_playing_field + i*square_pixel_length + (i+1)*grid_lines_width), (top_of_playing_field + j*square_pixel_length + (j+1)*grid_lines_width), square_pixel_length, square_pixel_length)
+            rectangle(grid_screen, square_color, (left_of_playing_field + i*square_pixel_length + (i+1)*grid_lines_width), (top_of_playing_field + j*square_pixel_length + (j+1)*grid_lines_width), square_pixel_length, square_pixel_length)
 
 def turn_square_color(grid, i, j, color):
     grid[i][j] = (grid[i][j][0], grid[i][j][1], color[0], color[1], color[2])
@@ -434,9 +437,18 @@ def game_over_animation():
 #prepare
 
 pygame.init()
-screen = pygame.display.set_mode(grid_size)
+
+# Initialize system fonts to use for score counter
+pygame.font.init()
+font = pygame.font.SysFont("Helvetica", 20)
+
+whole_screen = pygame.display.set_mode(grid_size)
+grid_screen = whole_screen.subsurface((score_width, 0, grid_size[0] - score_width, grid_size[1]))
+score_surface = whole_screen.subsurface((0, 0, score_width, grid_size[1]))
+
 pygame.display.set_caption('Tetris')
-screen.fill(background_color)
+whole_screen.fill(background_color)
+
 grid = np.zeros((x_squares, y_squares, 5)) #3D numpy array
 empty_square = (False, False, empty_square_color[0], empty_square_color[1], empty_square_color[2])
 
