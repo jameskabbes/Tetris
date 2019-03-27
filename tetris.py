@@ -23,7 +23,7 @@ placed_color_adder = -20
 
 square_pixel_length = 25
 x_squares = 10 #10 sqaures along the x direction
-y_squares = 20 #10 sqaures along the x direction
+y_squares = 20 #10 sqaures along the y direction
 
 grid_lines_width = 3
 grid_size = ((grid_lines_width + x_squares * (square_pixel_length + grid_lines_width)), (grid_lines_width + y_squares * (square_pixel_length + grid_lines_width)))
@@ -39,8 +39,8 @@ max_refresh_time = .4   #in seconds
 min_refresh_time = .05 #in seconds
 lines_to_get_max_refresh = 500 #refresh time will linearly decrease until it reaches the min number at x number of lines
 line_clear_delay = .2
-sticky_keys_hold_time = .15
-
+sticky_keys_hold_time = .12
+sticky_keys_windback = .03
 
 #############################
 
@@ -488,29 +488,19 @@ while True:
             game_over_animation()
             break
 
+
     if pygame.key.get_focused():
         keys = pygame.key.get_pressed()
 
         if keys[pygame.K_UP]:
 
-            if last_dir == 'up':
-                if (time.time() - last_pressed) > sticky_keys_hold_time:
-                    grid, object_xys = rotate_object(grid, object_xys, object_type)
-                    last_pressed = time.time()
-
-
-            else:
+            if last_dir != 'up':
                 last_dir = 'up'
                 last_pressed = time.time()
                 grid, object_xys = rotate_object(grid, object_xys, object_type)
 
-
         elif keys[pygame.K_z]:
-            if last_dir == 'z':
-                if (time.time() - last_pressed) > sticky_keys_hold_time:
-                    grid, object_xys = rotate_object(grid, object_xys, object_type, how = 'counter')
-                    last_pressed = time.time()
-            else:
+            if last_dir != 'z':
                 last_dir = 'z'
                 last_pressed = time.time()
                 grid, object_xys = rotate_object(grid, object_xys, object_type, how = 'counter')
@@ -519,7 +509,10 @@ while True:
             if last_dir == 'left':
                 if (time.time() - last_pressed) > sticky_keys_hold_time:
                     grid, object_xys = move_object(grid, 'left', object_xys)
-                    last_pressed = time.time()
+                    #last_pressed = time.time()
+                    last_pressed = time.time() - sticky_keys_hold_time + sticky_keys_windback
+
+
             else:
                 last_dir = 'left'
                 last_pressed = time.time()
@@ -530,7 +523,8 @@ while True:
             if last_dir == 'right':
                 if (time.time() - last_pressed) > sticky_keys_hold_time:
                     grid, object_xys = move_object(grid, 'right', object_xys)
-                    last_pressed = time.time()
+                    #last_pressed = time.time()
+                    last_pressed = time.time() - sticky_keys_hold_time + sticky_keys_windback
             else:
                 last_dir = 'right'
                 last_pressed = time.time()
@@ -540,22 +534,19 @@ while True:
             if last_dir == 'down':
                 if (time.time() - last_pressed) > sticky_keys_hold_time:
                     grid, object_xys = move_object(grid, 'down', object_xys)
-                    last_pressed = time.time()
+                    #last_pressed = time.time()
+                    last_pressed = time.time() - sticky_keys_hold_time + sticky_keys_windback
+
             else:
                 last_dir = 'down'
                 last_pressed = time.time()
                 grid, object_xys = move_object(grid, 'down', object_xys)
 
         elif keys[pygame.K_SPACE]:
-            if last_dir == 'space':
-                if (time.time() - last_pressed) > sticky_keys_hold_time:
-                    grid, object_xys = hard_drop(grid, object_xys)
-                    last_pressed = time.time()
-            else:
+            if last_dir != 'space':
                 last_dir = 'space'
                 last_pressed = time.time()
                 grid, object_xys = hard_drop(grid, object_xys)
-
 
         else:
             last_dir = 'none'
@@ -564,3 +555,4 @@ while True:
         #    grid, object_xys = move_object(grid, 'up', object_xys)
     update_grid(grid)
     pygame.display.flip()
+    time.sleep(.001)
