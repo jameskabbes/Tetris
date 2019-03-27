@@ -35,12 +35,12 @@ cleared_line_color = off_white
 left_of_playing_field = 0 # pixel
 top_of_playing_field = 0  #pixel
 
-max_refresh_time = 1   #in seconds
+max_refresh_time = .4   #in seconds
 min_refresh_time = .05 #in seconds
 lines_to_get_max_refresh = 500 #refresh time will linearly decrease until it reaches the min number at x number of lines
 line_clear_delay = .2
+sticky_keys_hold_time = .15
 
-sticky_keys_hold_time = .1
 
 #############################
 
@@ -268,10 +268,10 @@ def rotate_object(grid, object_xys, object_type, how = 'clock'):
         rotate_point_index = 1
 
     elif object_type == 2:
-        rotate_point_index = 0
+        rotate_point_index = 1
 
     elif object_type == 3:
-        rotate_point_index = 2
+        rotate_point_index = 1
 
     elif object_type == 4:
         rotate_point_index = 1
@@ -306,6 +306,18 @@ def rotate_object(grid, object_xys, object_type, how = 'clock'):
     else:
         return (grid, object_xys)
 
+def hard_drop(grid, object_xys):
+
+    new_xys = copy.deepcopy(object_xys)
+
+    while True:
+
+        grid, object_xys = move_object(grid, 'down', object_xys)
+        if object_xys == None:
+            return grid, object_xys
+
+        update_grid(grid)
+        time.sleep(.005)
 
 def object_generator(grid):
 
@@ -533,6 +545,20 @@ while True:
                 last_dir = 'down'
                 last_pressed = time.time()
                 grid, object_xys = move_object(grid, 'down', object_xys)
+
+        elif keys[pygame.K_SPACE]:
+            if last_dir == 'space':
+                if (time.time() - last_pressed) > sticky_keys_hold_time:
+                    grid, object_xys = hard_drop(grid, object_xys)
+                    last_pressed = time.time()
+            else:
+                last_dir = 'space'
+                last_pressed = time.time()
+                grid, object_xys = hard_drop(grid, object_xys)
+
+
+        else:
+            last_dir = 'none'
 
         #elif keys[pygame.K_SPACE]:
         #    grid, object_xys = move_object(grid, 'up', object_xys)
