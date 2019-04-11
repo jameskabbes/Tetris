@@ -36,7 +36,7 @@ cleared_line_color = off_white
 left_of_playing_field = 0 # pixel
 top_of_playing_field = 0  #pixel
 
-max_refresh_time = .4   #in seconds
+max_refresh_time = .8   #in seconds
 min_refresh_time = .05 #in seconds
 lines_to_get_max_refresh = 500 #refresh time will linearly decrease until it reaches the min number at x number of lines
 line_clear_delay = .2
@@ -429,7 +429,19 @@ def object_generator(grid):
         #game over
         return grid, None, choice
 
-def game_over_animation():
+def game_over_animation(grid):
+
+    #Flll up the screen from the bottom up with the cleared line color of blocks
+
+    for row in range(y_squares -1, -1, -1): #loop through each of the lines from bottom up and delay
+
+        for x in range(x_squares):
+
+            grid = turn_square_color(grid, x, row, cleared_line_color)
+
+        update_grid(grid)
+        pygame.display.flip()
+        time.sleep(.01)
 
     print ('game over')
 
@@ -484,7 +496,7 @@ while True:
         grid, object_xys, object_type = object_generator(grid)
         if object_xys == None:
             #Game is over
-            game_over_animation()
+            game_over_animation(grid)
             break
 
     if (time.time() - start_time) > refresh_time:
@@ -497,7 +509,7 @@ while True:
         grid, object_xys, object_type = object_generator(grid)
         if object_xys == None:
             #Game is over
-            game_over_animation()
+            game_over_animation(grid)
             break
 
 
